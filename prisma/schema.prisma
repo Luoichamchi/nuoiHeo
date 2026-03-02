@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String        @id @default(cuid())
+  fullName      String
+  avatarUrl     String?
+  pinHash       String
+  role          String        @default("MEMBER")
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  createdMatches Match[]      @relation("MatchCreator")
+  votes         Vote[]
+  charges       Charge[]
+  payments      Payment[]     @relation("UserPayments")
+  recorded      Payment[]     @relation("PaymentRecorder")
+  importedBatches ImportBatch[] @relation("ImportUploader")
+  voteUpdates   Vote[]        @relation("VoteUpdater")
+}
+
+model Match {
+  id            String        @id @default(cuid())
+  title         String
+  optionALabel  String        @default("Team A")
+  optionBLabel  String        @default("Team B")
+  penaltyAmount Int
+  startAt       DateTime
+  lockAt        DateTime
+  result        String        @default("PENDING")
+  createdById   String
+  createdBy     User          @relation("MatchCreator", fields: [createdById], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  votes         Vote[]
+  charges       Charge[]
+  payments      Payment[]
+  importBatches ImportBatch[]
+
+  @@index([startAt])
+  @@index([lockAt])
+}
+
+model Vote {
+  id             String       @id @default(cuid())
+  matchId        String
+  userId         String
+  choice         String
+  source         String       @default("SELF")
+  importedBatchId String?
+  updatedById    String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  match          Match        @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  importedBatch  ImportBatch? @relation(fields: [importedBatchId], references: [id], onDelete: SetNull)
+  updatedBy      User?        @relation("VoteUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@unique([matchId, userId])
+}
+
+model Charge {
+  id          String       @id @default(cuid())
+  matchId     String
+  userId      String
+  amountDue   Int          @default(0)
+  amountPaid  Int          @default(0)
+  status      String       @default("UNPAID")
+  calculatedAt DateTime    @default(now())
+  updatedAt   DateTime     @updatedAt
+  match       Match        @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, userId])
+}
+
+model Payment {
+  id           String   @id @default(cuid())
+  matchId      String
+  userId       String
+  amount       Int
+  paidAt       DateTime @default(now())
+  note         String?
+  recordedById String
+  match        Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user         User     @relation("UserPayments", fields: [userId], references: [id], onDelete: Cascade)
+  recordedBy   User     @relation("PaymentRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
+
+  @@index([matchId, userId])
+}
+
+model ImportBatch {
+  id          String   @id @default(cuid())
+  matchId     String
+  fileName    String
+  uploadedById String
+  totalRows   Int
+  successRows Int
+  failedRows  Int
+  errorRows   String?
+  createdAt   DateTime @default(now())
+  match       Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  uploadedBy  User     @relation("ImportUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+  votes       Vote[]
+
+  @@index([matchId, createdAt])
+}
