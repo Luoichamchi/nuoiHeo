@@ -14,7 +14,8 @@ Web app full-stack for internal betting/polling with 2 options (A/B), automatic 
 - Admin user management (create/update/activate, avatar upload)
   - `userId` must be entered manually when creating user and must be unique
 - Admin match management (rules, penalty amount, lock time, set result)
-- CSV vote import by admin (`userId` or `fullName`, `choice`)
+  - Delete match with cascading cleanup of related votes/charges/payments/import batches
+- CSV vote import by admin (`userId` or `fullName`, `choice` = `A`/`B`/`NONE`, supports `,` and `;` delimiters)
 - Payment recording (partial payment supported)
 - Summary table and pie chart
 - Top debtors highlight (top 3 including ties at position 3)
@@ -99,10 +100,14 @@ npm run dev
 Sample: `docs/import-votes-template.csv`
 
 Required columns:
-- `choice`: `A` or `B`
+- `choice`: `A`, `B`, or `NONE`
 - At least one identifier:
   - `userId`, or
   - `fullName` (exact match, case-insensitive)
+
+Notes:
+- `NONE` means user has no vote (unvoted), and by business rule will be treated as losing when result is settled.
+- CSV delimiter can be comma `,` or semicolon `;`.
 
 ## Main APIs
 - Auth: `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`

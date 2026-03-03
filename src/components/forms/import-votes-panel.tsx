@@ -42,7 +42,10 @@ export function ImportVotesPanel({ matchId }: Props) {
     <section className="space-y-4">
       <div className="card p-5">
         <h1 className="text-xl font-bold text-slate-900">Import votes tu CSV</h1>
-        <p className="mt-2 text-sm text-slate-600">Yeu cau cot: `userId` hoac `fullName`, va `choice` (A/B).</p>
+        <p className="mt-2 text-sm text-slate-600">
+          Yeu cau cot: `userId` hoac `fullName`, va `choice` (A/B/NONE). `NONE` = xoa lua chon, coi nhu chua binh chon.
+          Ho tro file CSV phan tach bang dau `,` hoac `;`.
+        </p>
 
         <form onSubmit={onSubmit} className="mt-4 flex flex-wrap items-center gap-3">
           <input type="file" accept=".csv,text/csv" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />

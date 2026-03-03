@@ -94,3 +94,29 @@ export async function setMatchResult(matchId: string, result: Exclude<MatchResul
 export async function getMatchById(matchId: string) {
   return db.match.findUnique({ where: { id: matchId } });
 }
+
+export async function deleteMatch(matchId: string) {
+  const summary = await db.match.findUnique({
+    where: { id: matchId },
+    select: {
+      id: true,
+      title: true,
+      _count: {
+        select: {
+          votes: true,
+          charges: true,
+          payments: true,
+          importBatches: true
+        }
+      }
+    }
+  });
+
+  if (!summary) return null;
+
+  await db.match.delete({
+    where: { id: matchId }
+  });
+
+  return summary;
+}

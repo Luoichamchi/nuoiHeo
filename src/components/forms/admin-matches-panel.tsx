@@ -97,6 +97,27 @@ export function AdminMatchesPanel() {
     await loadMatches();
   }
 
+  async function removeMatch(matchId: string, label: string) {
+    const confirmed = window.confirm(`Ban co chac muon xoa tran '${label}'? Du lieu lien quan (vote, tien, import) se bi xoa.`);
+    if (!confirmed) return;
+
+    const response = await fetch(`/api/admin/matches/${matchId}`, {
+      method: "DELETE"
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      setMessage(data.error || "Xoa tran that bai");
+      return;
+    }
+
+    const cascaded = data.cascaded;
+    setMessage(
+      `Da xoa tran. Du lieu bi xoa kem: ${cascaded.votes} vote, ${cascaded.charges} charge, ${cascaded.payments} payment, ${cascaded.importBatches} import batch.`
+    );
+    await loadMatches();
+  }
+
   return (
     <section className="space-y-4">
       <div className="card p-4 sm:p-5">
@@ -174,6 +195,12 @@ export function AdminMatchesPanel() {
                   <Link href={`/admin/matches/${match.id}/import`} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700">
                     Import CSV
                   </Link>
+                  <button
+                    onClick={() => removeMatch(match.id, `${match.optionALabel} vs ${match.optionBLabel}`)}
+                    className="rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700"
+                  >
+                    Xoa
+                  </button>
                   {match.result === "PENDING" && (
                     <>
                       <button onClick={() => setResult(match.id, "A")} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm text-white">

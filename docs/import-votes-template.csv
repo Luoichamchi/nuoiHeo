@@ -1,3 +1,4 @@
-userId,fullName,choice
-member-seed-0,,A
-,Tran Thi B,B
+userId;fullName;choice
+member-seed-0;;A
+;Tran Thi B;B
+member-seed-2;;NONE

@@ -26,6 +26,18 @@ export type ActiveMatchItem = {
     source: VoteSourceType;
     updatedAt: string;
   } | null;
+  voteStats: {
+    totalMembers: number;
+    countA: number;
+    countB: number;
+    countUnvoted: number;
+    percentA: number;
+    percentB: number;
+    percentUnvoted: number;
+    usersA: string[];
+    usersB: string[];
+    usersUnvoted: string[];
+  };
 };
 
 export type SummaryRow = {

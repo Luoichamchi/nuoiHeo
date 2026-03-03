@@ -1,30 +1,42 @@
 import { parse } from "csv-parse/sync";
 import type { VoteChoice } from "@/lib/domain";
 
+export type ImportedVoteChoice = VoteChoice | "NONE";
+
 export type ParsedVoteRow = {
   userId?: string;
   fullName?: string;
-  choice: VoteChoice;
+  choice: ImportedVoteChoice;
   rowNumber: number;
 };
 
-const CHOICE_MAP: Record<string, VoteChoice> = {
+const CHOICE_MAP: Record<string, ImportedVoteChoice> = {
   A: "A",
-  B: "B"
+  B: "B",
+  NONE: "NONE"
 };
 
-function normalizeChoice(value: string): VoteChoice | null {
+function normalizeChoice(value: string): ImportedVoteChoice | null {
   const upper = value.trim().toUpperCase();
   return CHOICE_MAP[upper] ?? null;
+}
+
+function detectDelimiter(content: string): "," | ";" {
+  const firstLine = content.split(/\r?\n/, 1)[0] || "";
+  const commaCount = (firstLine.match(/,/g) || []).length;
+  const semicolonCount = (firstLine.match(/;/g) || []).length;
+  return semicolonCount > commaCount ? ";" : ",";
 }
 
 export function parseVoteCsv(content: string): { rows: ParsedVoteRow[]; errors: string[] } {
   let records: Record<string, string>[] = [];
   try {
+    const delimiter = detectDelimiter(content);
     records = parse(content, {
       columns: true,
       skip_empty_lines: true,
-      trim: true
+      trim: true,
+      delimiter
     }) as Record<string, string>[];
   } catch {
     return {
@@ -43,7 +55,7 @@ export function parseVoteCsv(content: string): { rows: ParsedVoteRow[]; errors: 
     const choice = normalizeChoice(record.choice || "");
 
     if (!choice) {
-      errors.push(`Row ${rowNumber}: choice must be A or B`);
+      errors.push(`Row ${rowNumber}: choice must be A, B or NONE`);
       return;
     }
 

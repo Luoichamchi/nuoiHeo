@@ -93,6 +93,53 @@ export function VotePanel() {
             {match.result === "PENDING" && new Date(match.lockAt).getTime() <= Date.now() && (
               <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">Tran nay da qua gio khoa binh chon.</div>
             )}
+
+            <details className="rounded-xl border border-slate-200 bg-white">
+              <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-slate-700">
+                Thong ke binh chon ({match.voteStats.totalMembers} nguoi)
+              </summary>
+              <div className="grid gap-3 border-t border-slate-100 p-3 sm:grid-cols-3">
+                <div className="rounded-lg bg-brand-50 p-3">
+                  <p className="text-xs font-semibold text-brand-700">
+                    Chon A: {match.voteStats.countA} nguoi ({match.voteStats.percentA}%)
+                  </p>
+                  <ul className="mt-2 max-h-32 space-y-1 overflow-auto text-xs text-slate-700">
+                    {match.voteStats.usersA.length > 0 ? (
+                      match.voteStats.usersA.map((name) => <li key={`a-${match.id}-${name}`}>{name}</li>)
+                    ) : (
+                      <li>Khong co</li>
+                    )}
+                  </ul>
+                </div>
+
+                <div className="rounded-lg bg-sky-50 p-3">
+                  <p className="text-xs font-semibold text-sky-700">
+                    Chon B: {match.voteStats.countB} nguoi ({match.voteStats.percentB}%)
+                  </p>
+                  <ul className="mt-2 max-h-32 space-y-1 overflow-auto text-xs text-slate-700">
+                    {match.voteStats.usersB.length > 0 ? (
+                      match.voteStats.usersB.map((name) => <li key={`b-${match.id}-${name}`}>{name}</li>)
+                    ) : (
+                      <li>Khong co</li>
+                    )}
+                  </ul>
+                </div>
+
+                <div className="rounded-lg bg-amber-50 p-3">
+                  <p className="text-xs font-semibold text-amber-800">
+                    Chua chon: {match.voteStats.countUnvoted} nguoi ({match.voteStats.percentUnvoted}%)
+                  </p>
+                  <ul className="mt-2 max-h-32 space-y-1 overflow-auto text-xs text-slate-700">
+                    {match.voteStats.usersUnvoted.length > 0 ? (
+                      match.voteStats.usersUnvoted.map((name) => <li key={`u-${match.id}-${name}`}>{name}</li>)
+                    ) : (
+                      <li>Khong co</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </details>
+
             <div className="grid gap-3 sm:grid-cols-2">
               <button
                 type="button"

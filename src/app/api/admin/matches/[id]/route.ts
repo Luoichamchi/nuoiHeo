@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { badRequest, notFound } from "@/lib/http";
 import { updateMatchSchema } from "@/lib/validators";
 import { requireApiSession } from "@/modules/auth/guards";
-import { updateMatch } from "@/modules/matches/service";
+import { deleteMatch, updateMatch } from "@/modules/matches/service";
 
 export async function PATCH(request: NextRequest, context: { params: { id: string } }) {
   const guard = requireApiSession(["ADMIN"]);
@@ -26,4 +26,25 @@ export async function PATCH(request: NextRequest, context: { params: { id: strin
   } catch {
     return notFound("Match not found");
   }
+}
+
+export async function DELETE(_: NextRequest, context: { params: { id: string } }) {
+  const guard = requireApiSession(["ADMIN"]);
+  if (!guard.ok) return guard.response;
+
+  const deleted = await deleteMatch(context.params.id);
+  if (!deleted) return notFound("Match not found");
+
+  return NextResponse.json({
+    deleted: {
+      id: deleted.id,
+      title: deleted.title
+    },
+    cascaded: {
+      votes: deleted._count.votes,
+      charges: deleted._count.charges,
+      payments: deleted._count.payments,
+      importBatches: deleted._count.importBatches
+    }
+  });
 }

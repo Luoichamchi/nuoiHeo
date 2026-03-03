@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import type { VoteChoice, VoteSource } from "@/lib/domain";
-import { parseVoteCsv } from "@/lib/csv";
+import { parseVoteCsv, type ImportedVoteChoice } from "@/lib/csv";
 import { recalculateMatchCharges } from "@/modules/settlement/service";
 
 export async function upsertVote(params: {
@@ -97,7 +97,7 @@ export async function importVotesFromCsv(params: {
   const userByName = new Map(users.map((user) => [normalizeName(user.fullName), user]));
 
   const errorRows: string[] = [...parsed.errors];
-  const validRows: { userId: string; choice: VoteChoice }[] = [];
+  const validRows: { userId: string; choice: ImportedVoteChoice }[] = [];
 
   parsed.rows.forEach((row) => {
     let targetUser = row.userId ? userById.get(row.userId) : undefined;
@@ -126,6 +126,15 @@ export async function importVotesFromCsv(params: {
   });
 
   const operations = validRows.map((item) => {
+    if (item.choice === "NONE") {
+      return db.vote.deleteMany({
+        where: {
+          matchId: params.matchId,
+          userId: item.userId
+        }
+      });
+    }
+
     return db.vote.upsert({
       where: {
         matchId_userId: {
@@ -168,13 +177,26 @@ export async function importVotesFromCsv(params: {
 }
 
 export async function getVotesForActiveMatches(userId: string) {
+  const members = await db.user.findMany({
+    where: {
+      isActive: true,
+      role: "MEMBER"
+    },
+    select: {
+      id: true,
+      fullName: true
+    }
+  });
+
+  const memberIds = new Set(members.map((member) => member.id));
+
   const matches = await db.match.findMany({
     orderBy: [{ startAt: "desc" }, { createdAt: "desc" }],
     include: {
       votes: {
-        where: { userId },
         select: {
           id: true,
+          userId: true,
           choice: true,
           source: true,
           updatedAt: true
@@ -183,11 +205,54 @@ export async function getVotesForActiveMatches(userId: string) {
     }
   });
 
+  const toPercent = (count: number, total: number) => {
+    if (total <= 0) return 0;
+    return Number(((count / total) * 100).toFixed(1));
+  };
+
   return matches.map((match) => {
-    const vote = match.votes[0] ?? null;
+    const memberVotes = match.votes.filter((vote) => memberIds.has(vote.userId));
+    const myVote = memberVotes.find((vote) => vote.userId === userId) ?? null;
+    const voteChoiceByUserId = new Map(memberVotes.map((vote) => [vote.userId, vote.choice]));
+
+    const usersA = members.filter((member) => voteChoiceByUserId.get(member.id) === "A").map((member) => member.fullName);
+    const usersB = members.filter((member) => voteChoiceByUserId.get(member.id) === "B").map((member) => member.fullName);
+    const usersUnvoted = members.filter((member) => !voteChoiceByUserId.has(member.id)).map((member) => member.fullName);
+
+    const totalMembers = members.length;
+    const countA = usersA.length;
+    const countB = usersB.length;
+    const countUnvoted = usersUnvoted.length;
+
     return {
-      ...match,
-      myVote: vote
+      id: match.id,
+      title: match.title,
+      optionALabel: match.optionALabel,
+      optionBLabel: match.optionBLabel,
+      penaltyAmount: match.penaltyAmount,
+      startAt: match.startAt,
+      lockAt: match.lockAt,
+      result: match.result,
+      myVote: myVote
+        ? {
+            id: myVote.id,
+            choice: myVote.choice,
+            source: myVote.source,
+            updatedAt: myVote.updatedAt
+          }
+        : null,
+      voteStats: {
+        totalMembers,
+        countA,
+        countB,
+        countUnvoted,
+        percentA: toPercent(countA, totalMembers),
+        percentB: toPercent(countB, totalMembers),
+        percentUnvoted: toPercent(countUnvoted, totalMembers),
+        usersA,
+        usersB,
+        usersUnvoted
+      }
     };
   });
 }
