@@ -88,6 +88,28 @@ npm run prisma:seed
 npm run dev
 ```
 
+## Deploy With Docker
+
+### 1) Build and run
+```bash
+docker compose up -d --build
+```
+
+App URL: `http://localhost:3000`
+
+### 2) Stop
+```bash
+docker compose down
+```
+
+### 3) Data persistence
+- SQLite DB is stored in `./data/dev.db` on host (mounted to `/app/data/dev.db` in container).
+- Uploaded avatars are stored in `./public/uploads`.
+
+### 4) Notes
+- Container startup command runs `prisma migrate deploy` automatically before `next start`.
+- Set a strong `SESSION_SECRET` in `docker-compose.yml` before production use.
+
 ## Seed Accounts
 - Admin:
   - `userId`: `admin-seed`

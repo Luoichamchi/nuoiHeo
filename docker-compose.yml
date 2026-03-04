@@ -1,0 +1,17 @@
+services:
+  nuoiheo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nuoiheo-app
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "file:/app/data/dev.db"
+      SESSION_SECRET: "change_me_to_secure_random_secret"
+      NODE_ENV: "production"
+      PORT: "3000"
+    volumes:
+      - ./data:/app/data
+      - ./public/uploads:/app/public/uploads
+    restart: unless-stopped
