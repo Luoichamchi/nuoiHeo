@@ -9,7 +9,12 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { id: "admin-seed" },
-    update: {},
+    update: {
+      fullName: "Admin",
+      pinHash: adminPinHash,
+      role: "ADMIN",
+      isActive: true
+    },
     create: {
       id: "admin-seed",
       fullName: "Admin",
@@ -23,7 +28,12 @@ async function main() {
   for (let i = 0; i < names.length; i += 1) {
     await prisma.user.upsert({
       where: { id: `member-seed-${i}` },
-      update: {},
+      update: {
+        fullName: names[i],
+        pinHash: memberPinHash,
+        role: "MEMBER",
+        isActive: true
+      },
       create: {
         id: `member-seed-${i}`,
         fullName: names[i],
